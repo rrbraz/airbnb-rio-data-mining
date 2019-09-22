@@ -1,0 +1,47 @@
+---
+title: "AirBnb Rio"
+author: "Rafael"
+date: "22/09/2019"
+output: html_document
+---
+## O dataset
+Disponível em: http://insideairbnb.com/get-the-data.html
+
+Download:
+```{r, echo=FALSE}
+if(!file.exists("airbnb.csv.gz")) {
+  download.file("http://data.insideairbnb.com/brazil/rj/rio-de-janeiro/2019-07-15/data/listings.csv.gz", "airbnb.csv.gz")
+}
+```
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(leaflet)
+
+airbnb <- read_csv(gzfile("airbnb.csv.gz"))
+airbnb %>% head()
+```
+
+## Mapa com as listagens
+```{r}
+pal <- colorFactor(palette = c("red", "green", "blue", "purple", "yellow"), domain = airbnb$room_type)
+
+leaflet(data = airbnb) %>% 
+  addProviderTiles(providers$CartoDB.DarkMatterNoLabels) %>% 
+  addCircleMarkers(~longitude, 
+    ~latitude, 
+    color=~pal(room_type), 
+    weight = 1, 
+    radius=1, 
+    fillOpacity = 0.1, 
+    opacity = 0.1,
+    label = paste("Name:", airbnb$name)) %>% addLegend("bottomright", pal = pal, values = ~room_type,
+            title = "Room types",
+            opacity = 1)
+
+
+```
+
+Referencia para seguir:
+https://www.kaggle.com/josipdomazet/mining-nyc-airbnb-data-using-r
+
