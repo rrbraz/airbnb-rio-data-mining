@@ -23,7 +23,7 @@ library(leaflet)
 airbnb <- read_csv(gzfile("airbnb.csv.gz"))
 
 # seleciona as colunas
-airbnb <- airbnb %>% select(name, host_name, neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, maximum_nights,  availability_365,  number_of_reviews,  review_scores_rating,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification)
+airbnb <- airbnb %>% select(name, host_name, neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, availability_365,  number_of_reviews,  review_scores_rating,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification)
 
 
 
@@ -118,7 +118,7 @@ tipos_propriedade <- airbnb %>%
 
 tipos_propriedade %>%
   ggplot(aes(tipo_propriedade, n, fill=tipo_propriedade)) +
-  geom_bar(stat="identity", legend=NULL) +
+  geom_bar(stat="identity") +
   geom_text(aes(label=n), vjust=-0.4, size=3.5) +
   xlab("Tipo de propriedade") +
   ylab("Frequência") +
@@ -128,12 +128,9 @@ tipos_propriedade %>%
 
 ### Política de cancelamento
 ```{r}
-politicas_cancelamento <- airbnb %>%
+airbnb %>%
   group_by(cancellation_policy) %>%
-  tally(sort=TRUE)
-politicas_cancelamento
-
-politicas_cancelamento %>%
+  tally(sort=TRUE) %>%
   ggplot(aes(x=reorder(cancellation_policy, -n), y=n, fill=reorder(cancellation_policy, -n))) + 
   geom_bar(stat="identity") + 
   geom_text(aes(label=n), vjust=-0.4, size=3.5) +
@@ -145,6 +142,7 @@ politicas_cancelamento %>%
 
 ### Requer foto de perfil do hóspede
 ```{r}
+# Tema para pie charts
 blank_theme <- theme(
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
@@ -175,6 +173,185 @@ airbnb %>%
   geom_text(stat='count',aes(label=..count..), position = position_stack(vjust = 0.5), color="white") +
   labs(fill="") +
   ggtitle("Requer que o hóspede tenha telefone verificado")
+```
+
+### Accommodates
+```{r}
+airbnb$accommodates %>% summary()
+
+airbnb %>% 
+  filter(accommodates < 50) %>%
+  ggplot(aes(x = "", y = accommodates)) +
+  geom_boxplot(fill="purple") + 
+  xlab("") + 
+  ylab("Número") +
+  ggtitle("Quantidade máxima de pessoas acomodadas",
+          subtitle = "Removido um valor 160") +
+  theme(legend.position = "none")
+
+```
+```{r}
+airbnb %>% 
+  filter(accommodates < 50) %>%
+  ggplot(aes(accommodates)) +
+  geom_histogram(bins = 31, fill="purple") + 
+  xlab("") + 
+  ylab("Frequência") +
+  ggtitle("Quantidade máxima de pessoas acomodadas",
+          subtitle = "Removido um valor 160") +
+  theme(legend.position = "none")
+
+```
+
+### Quartos
+
+```{r}
+airbnb$bedrooms %>% summary()
+
+airbnb %>% 
+  ggplot(aes(x = "", y = bedrooms)) +
+  geom_boxplot(fill="lightblue") + 
+  xlab("") + 
+  ylab("Número") +
+  ggtitle("Número de quartos") +
+  theme(legend.position = "none")
+
+```
+```{r}
+airbnb$bedrooms %>% summary()
+
+airbnb %>% 
+  ggplot(aes(bedrooms)) +
+  geom_histogram(bins=28, fill="lightblue") + 
+  xlab("Quartos") + 
+  ylab("Frequência") +
+  ggtitle("Número de quartos") +
+  theme(legend.position = "none")
+
+```
+
+### Número mínimo de noites
+
+```{r}
+airbnb$minimum_nights %>% summary()
+
+airbnb %>% 
+  ggplot(aes(x = "", y = minimum_nights)) +
+  geom_boxplot(fill="lightblue") + 
+  scale_y_log10() + 
+  xlab("") + 
+  ylab("Noites") +
+  ggtitle("Número mínimo de noites", subtitle = "Com escala logarítmica") +
+  theme(legend.position = "none")
+
+```
+```{r}
+airbnb %>% 
+#  filter(minimum_nights < 50) %>%
+  ggplot(aes(minimum_nights)) +
+  geom_histogram(bins=28, fill="lightgreen") + 
+  xlab("Noites") + 
+  ylab("Frequência") +
+  ggtitle("Número mínimo de noites") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  filter(minimum_nights <= 20) %>%
+  ggplot(aes(minimum_nights)) +
+  geom_histogram(bins=19, fill="lightgreen") + 
+  xlab("Noites") + 
+  ylab("Frequência") +
+  ggtitle("Número mínimo de noites", subtitle = "Removidos valores maiores que 20") +
+  theme(legend.position = "none")
+```
+
+### Disponibilidade 365
+
+```{r}
+airbnb$availability_365 %>% summary()
+
+airbnb %>% 
+  ggplot(aes(x = "", y = availability_365)) +
+  geom_boxplot(fill="blue") + 
+  xlab("") + 
+  ylab("Dias") +
+  ggtitle("Disponibilidade 365") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  ggplot(aes(availability_365)) +
+  geom_histogram(bins=28, fill="blue") + 
+  xlab("Dias") + 
+  ylab("Frequência") +
+  ggtitle("Disponibilidade 365") +
+  theme(legend.position = "none")
+```
+
+### Número de avaliações
+
+```{r}
+airbnb$number_of_reviews %>% summary()
+
+airbnb %>% 
+  ggplot(aes(x = "", y = number_of_reviews)) +
+  geom_boxplot(fill="pink") + 
+  scale_y_log10() +
+  xlab("") + 
+  ylab("Avaliações") +
+  ggtitle("Número de avaliações", subtitle = "Com escala logaritmica") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  filter(number_of_reviews <= 150) %>% 
+  ggplot(aes(number_of_reviews)) +
+  geom_histogram(bins=30, fill="pink") + 
+  xlab("Avaliações") + 
+  ylab("Frequência") +
+  ggtitle("Número de avaliações", subtitle = "Filtrados valores acima de 150") +
+  theme(legend.position = "none")
+
+```
+
+### Avaliação
+
+```{r}
+airbnb$review_scores_rating %>% summary()
+
+airbnb %>% 
+  ggplot(aes(x = "", y = review_scores_rating)) +
+  geom_boxplot(fill="#18d9cc") + 
+  xlab("") + 
+  ylab("Avaliações") +
+  ggtitle("Número de avaliações") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  ggplot(aes(review_scores_rating)) +
+  geom_histogram(bins=50, fill="#18d9cc") + 
+  xlab("Avaliação") + 
+  ylab("Frequência") +
+  ggtitle("Avaliação") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  filter(review_scores_rating < 100) %>%
+  ggplot(aes(review_scores_rating)) +
+  geom_histogram(bins=50, fill="#18d9cc") + 
+  xlab("Avaliação") + 
+  ylab("Frequência") +
+  ggtitle("Avaliação", subtitle = "Removidas notas 100") +
+  theme(legend.position = "none")
+
+airbnb %>%
+  mutate(notamaxima = (review_scores_rating == 100)) %>%
+  group_by(notamaxima) %>%
+  ggplot(aes(x="", fill=notamaxima)) +
+  geom_bar(width=1) +
+  coord_polar("y", start=0) +
+  blank_theme + 
+  geom_text(stat="count", aes(label=..count..), position=position_stack(vjust = 0.5), color="white") +
+  labs(fill="Nota máxima") +
+  ggtitle("Nota máxima (100)")
 ```
 
 
@@ -212,8 +389,7 @@ ggplot(airbnb, aes(x = room_type, y = price)) +
   geom_boxplot(aes(fill = room_type)) + scale_y_log10() +
   xlab("Tipo de quarto") + 
   ylab("Preço") +
-  ggtitle("Boxplots of price by room type",
-          subtitle = "Entire homes and apartments have the highest avg price") +
+  ggtitle("Boxplots de preço por tipo de quarto") +
   geom_hline(yintercept = mean(airbnb$price), color = "purple", linetype = 2) +
   theme(legend.position = "none")
 ```
@@ -222,7 +398,6 @@ ggplot(airbnb, aes(x = room_type, y = price)) +
 ## Correlação
 ```{r}
 library(corrplot)
-airbnb$log_price = log(airbnb$price)
 airbnb_cor <- airbnb[, sapply(airbnb, is.numeric)]
 airbnb_cor <- airbnb_cor[complete.cases(airbnb_cor), ]
 correlation_matrix <- cor(airbnb_cor, method = "spearman")
