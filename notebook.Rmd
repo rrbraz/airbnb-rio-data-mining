@@ -23,7 +23,7 @@ library(leaflet)
 airbnb <- read_csv(gzfile("airbnb.csv.gz"))
 
 # seleciona as colunas
-airbnb <- airbnb %>% select(name, host_name, host_total_listings_count, calculated_host_listings_count,  neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, maximum_nights,  availability_365,  number_of_reviews,  review_scores_rating,  review_scores_accuracy,  review_scores_location,  review_scores_value,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification)
+airbnb <- airbnb %>% select(name, host_name, host_total_listings_count, calculated_host_listings_count,  neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, maximum_nights,  availability_365,  number_of_reviews,  review_scores_rating,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification)
 
 
 
@@ -52,10 +52,7 @@ airbnb <- airbnb %>% filter(number_of_reviews != 0)
 # Remove preço 0
 airbnb <- airbnb %>% filter(price != 0)
 # Remove sem review_scores_accuracy
-airbnb <- airbnb %>% drop_na(review_scores_accuracy)
-airbnb <- airbnb %>% drop_na(review_scores_value)
 airbnb <- airbnb %>% drop_na(review_scores_rating)
-airbnb <- airbnb %>% drop_na(review_scores_location)
 
 airbnb <- airbnb %>% drop_na(bedrooms)
 
@@ -63,7 +60,6 @@ airbnb <- airbnb %>% drop_na(bedrooms)
 
 
 ```{r}
-missing_airbnb <- summarise_all(airbnb %>% drop_na(review_scores_accuracy), ~sum(is.na(.)))
 missing_airbnb <- gather(missing_airbnb, key = "variables", value = "missing")
 missing_airbnb %>% filter(missing > 0)
 ```
