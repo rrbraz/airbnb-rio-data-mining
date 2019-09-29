@@ -10,9 +10,9 @@ library(kableExtra)
 library(RColorBrewer)
 library(plotly)
 
-listings_rio <- read.csv("~/Desktop/listings_rio_detailed.csv", 
+listings_rio <- read.csv(gzfile("airbnb.csv.gz"), 
                    encoding="UTF-8", stringsAsFactors = F, na.strings = c(""))
-
+?select
 # Clean dataset
 airbnb <- {select(listings_rio, host_name, neighbourhood,latitude,longitude,room_type,price,minimum_nights,number_of_reviews,last_review,reviews_per_month,calculated_host_listings_count,availability_365)}
 
