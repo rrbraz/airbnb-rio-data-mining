@@ -321,8 +321,8 @@ airbnb %>%
   ggplot(aes(x = "", y = review_scores_rating)) +
   geom_boxplot(fill="#18d9cc") + 
   xlab("") + 
-  ylab("Avaliações") +
-  ggtitle("Número de avaliações") +
+  ylab("Avaliação") +
+  ggtitle("Avaliações") +
   theme(legend.position = "none")
 
 airbnb %>% 
