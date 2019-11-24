@@ -1,7 +1,9 @@
 ---
 title: "AirBnb Rio"
+output:
+  pdf_document: default
+  html_document: default
 date: "22/09/2019"
-output: html_document
 ---
 # O dataset
 Disponível em: http://insideairbnb.com/get-the-data.html
@@ -20,10 +22,10 @@ library(tidyverse)
 library(ggplot2)
 library(leaflet)
 
-airbnb <- read_csv(gzfile("airbnb.csv.gz"))
+airbnb_org <- read_csv(gzfile("airbnb.csv.gz"))
 
 # seleciona as colunas
-airbnb <- airbnb %>% select(name, host_name, neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, availability_365,  number_of_reviews,  review_scores_rating,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification)
+airbnb <- airbnb_org %>% select(name, host_name, neighbourhood_cleansed, latitude, longitude, property_type, room_type, price, accommodates,  bedrooms,  minimum_nights, availability_365,  number_of_reviews,  review_scores_rating,  cancellation_policy,  require_guest_profile_picture,  require_guest_phone_verification, beds, bathrooms, amenities)
 
 
 
@@ -58,9 +60,18 @@ missing_airbnb %>% filter(missing > 0)
 airbnb <- airbnb %>% filter(number_of_reviews != 0)
 # Remove preço 0
 airbnb <- airbnb %>% filter(price != 0)
+# Remove bedrooms 0
+airbnb <- airbnb %>% filter(bedrooms > 0)
+# Remove accommodates 160
+airbnb <- airbnb %>% filter(accommodates < 160)
 # Remove os NA
 airbnb <- airbnb %>% drop_na(review_scores_rating)
 airbnb <- airbnb %>% drop_na(bedrooms)
+airbnb <- airbnb %>% drop_na(beds)
+airbnb <- airbnb %>% drop_na(bathrooms)
+
+# Remove outliers de preço
+airbnb <- airbnb %>% filter(price < quantile(airbnb$price, .99) & price > quantile(airbnb$price, 0.01))
 
 glimpse(airbnb)
 ```
@@ -410,25 +421,105 @@ corrplot(correlation_matrix, method = "color")
 ```{r}
 pal <- colorFactor(palette = c("red", "green", "blue", "purple", "yellow"), domain = airbnb$room_type)
 
-leaflet(data = airbnb) %>% 
-  addProviderTiles(providers$CartoDB.DarkMatterNoLabels) %>% 
-  addCircleMarkers(~longitude, 
-    ~latitude, 
-    color=~pal(room_type), 
-    weight = 1, 
-    radius=1, 
-    fillOpacity = 0.1, 
-    opacity = 1,
-    label = paste("Name:", airbnb$name)) %>% addLegend("bottomright", pal = pal, values = ~room_type,
-            title = "Room types",
-            opacity = 1)
+# leaflet(data = airbnb) %>% 
+#   addProviderTiles(providers$CartoDB.DarkMatterNoLabels) %>% 
+#   addCircleMarkers(~longitude, 
+#     ~latitude, 
+#     color=~pal(room_type), 
+#     weight = 1, 
+#     radius=1, 
+#     fillOpacity = 0.1, 
+#     opacity = 1,
+#     label = paste("Name:", airbnb$name)) %>% addLegend("bottomright", pal = pal, values = ~room_type,
+#             title = "Room types",
+#             opacity = 1)
 
 
 ```
 
 ```{r}
 library(plotly)
-plot_ly(airbnb, x = ~longitude, y = ~latitude, z = ~price, color = ~room_type) 
+# plot_ly(airbnb, x = ~longitude, y = ~latitude, z = ~price, color = ~room_type) 
+summary(airbnb %>% filter(bedrooms > 0) )
+```
+
+## Analise bivariada
+```{r}
+library(psych)
+airbnb$logprice = log(airbnb$price)
+
+
+pairs.panels(airbnb %>% select(logprice, latitude, accommodates, bedrooms, bathrooms, beds),
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+```
+
+## Adicionando amenities
+```{r}
+library(qdapTools)
+amenities <- airbnb$amenities %>% gsub('[\\{\\}"]', "", .) %>% noquote() %>% strsplit(",") %>% mtabulate()
+airbnb <- cbind(airbnb, amenities)
+cor(airbnb[, sapply(airbnb, is.numeric)], airbnb$price) 
+```
+
+## Data split
+```{r}
+airbnb <- airbnb %>% mutate(id = row_number())
+airbnb_train <- airbnb %>% sample_frac(.8)
+airbnb_test  <- anti_join(airbnb, airbnb_train, by = 'id')
+```
+
+
+## Regressão linear - simples
+```{r}
+first_model <- lm(formula = price ~ latitude + longitude  + room_type + bedrooms + bathrooms + number_of_reviews, data = airbnb_train, method = "qr")
+summary(first_model)
+plot(first_model)
+```
+
+
+## Regressão linear - log
+```{r}
+second_model <- lm(formula = log(price) ~ latitude + longitude  + room_type + bedrooms + bathrooms + log(number_of_reviews), data = airbnb_train, method = "qr")
+summary(second_model)
+plot(second_model)
+```
+
+
+
+## Regressão linear - Amenities
+```{r}
+third_model <- lm(log(price) ~ latitude*longitude  + room_type + bedrooms + bathrooms + log(number_of_reviews) + `Air conditioning` + `Cable TV` + Doorman + Dryer + `Free parking on premises` + `Hot tub` + Internet + Pool, data = airbnb_train, method="qr")
+summary(third_model)
+plot(third_model)
+```
+
+##
+```{r}
+pred_regression <- predict(third_model, newdata = airbnb_test)
+pred_regression <- exp(pred_regression)
+
+RMSE_regression <- sqrt(mean( (airbnb_test$price - pred_regression)**2 ))
+RMSE_regression
+
+SSE <- sum((airbnb_test$price - pred_regression)**2)
+SSR <- sum((pred_regression - mean(airbnb_test$price)) ** 2)
+R2 <- 1 - SSE/(SSE + SSR)
+R2
+
+regression_results <- tibble(
+  obs = airbnb_test$price,
+  pred = pred_regression
+)
+
+ggplot(regression_results, aes(obs, pred)) + 
+  geom_point(alpha=0.2) + 
+  geom_abline(slope = 1, intercept = 0, color = "blue", linetype = 2)
+
+
 ```
 
 

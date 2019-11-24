@@ -39,3 +39,6 @@ vignettes/*.pdf
 
 # datasets
 *.csv.gz
+
+notebook_files/
+pandoc*.html
