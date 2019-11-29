@@ -74,6 +74,7 @@ airbnb <- airbnb %>% drop_na(bathrooms)
 airbnb <- airbnb %>% filter(price < quantile(airbnb$price, .99) & price > quantile(airbnb$price, 0.01))
 
 glimpse(airbnb)
+summary(airbnb)
 ```
 
 Missing após remover
@@ -189,6 +190,8 @@ airbnb %>%
 ### Accommodates
 ```{r}
 airbnb$accommodates %>% summary()
+var(airbnb$accommodates)
+sd(airbnb$accommodates)
 
 airbnb %>% 
   filter(accommodates < 50) %>%
@@ -218,6 +221,8 @@ airbnb %>%
 
 ```{r}
 airbnb$bedrooms %>% summary()
+var(airbnb_entire_home$bedrooms)
+sd(airbnb_entire_home$bedrooms)
 
 airbnb %>% 
   ggplot(aes(x = "", y = bedrooms)) +
@@ -237,6 +242,53 @@ airbnb %>%
   xlab("Quartos") + 
   ylab("Frequência") +
   ggtitle("Número de quartos") +
+  theme(legend.position = "none")
+
+```
+
+### Camas
+```{r}
+airbnb$beds %>% summary()
+var(airbnb$beds)
+sd(airbnb$beds)
+
+airbnb %>% 
+  ggplot(aes(x = "", y = beds)) +
+  geom_boxplot(fill="purple") + 
+  xlab("") + 
+  ylab("Número") +
+  ggtitle("Número de camas") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  ggplot(aes(beds)) +
+  geom_histogram(bins=28, fill="purple") + 
+  xlab("Camas") + 
+  ylab("Frequência") +
+  ggtitle("Número de camas") +
+  theme(legend.position = "none")
+
+```
+### Banheiros
+```{r}
+airbnb$bathrooms %>% summary()
+var(airbnb$bathrooms)
+sd(airbnb$bathrooms)
+
+airbnb %>% 
+  ggplot(aes(x = "", y = bathrooms)) +
+  geom_boxplot(fill="lightgreen") + 
+  xlab("") + 
+  ylab("Número") +
+  ggtitle("Número de banheiros") +
+  theme(legend.position = "none")
+
+airbnb %>% 
+  ggplot(aes(bathrooms)) +
+  geom_histogram(bins=28, fill="lightgreen") + 
+  xlab("Camas") + 
+  ylab("Frequência") +
+  ggtitle("Número de banheiros") +
   theme(legend.position = "none")
 
 ```
@@ -302,6 +354,8 @@ airbnb %>%
 
 ```{r}
 airbnb$number_of_reviews %>% summary()
+var(airbnb$number_of_reviews)
+sd(airbnb$number_of_reviews)
 
 airbnb %>% 
   ggplot(aes(x = "", y = number_of_reviews)) +
@@ -403,6 +457,26 @@ ggplot(airbnb, aes(x = room_type, y = price)) +
   ggtitle("Boxplots de preço por tipo de quarto") +
   geom_hline(yintercept = mean(airbnb$price), color = "purple", linetype = 2) +
   theme(legend.position = "none")
+
+summary(airbnb$price)
+var(airbnb$price)
+sd(airbnb$price)
+
+airbnb_entire_home = airbnb %>% filter(room_type == "Entire home/apt")
+airbnb_private_room = airbnb %>% filter(room_type == "Private room")
+airbnb_shared_room = airbnb %>% filter(room_type == "Shared room")
+
+summary(airbnb_entire_home$price)
+var(airbnb_entire_home$price)
+sd(airbnb_entire_home$price)
+
+summary(airbnb_private_room$price)
+var(airbnb_private_room$price)
+sd(airbnb_private_room$price)
+
+summary(airbnb_shared_room$price)
+var(airbnb_shared_room$price)
+sd(airbnb_shared_room$price)
 ```
 
 
@@ -492,7 +566,7 @@ plot(second_model)
 
 ## Regressão linear - Amenities
 ```{r}
-third_model <- lm(log(price) ~ latitude*longitude  + room_type + bedrooms + bathrooms + log(number_of_reviews) + `Air conditioning` + `Cable TV` + Doorman + Dryer + `Free parking on premises` + `Hot tub` + Internet + Pool, data = airbnb_train, method="qr")
+third_model <- lm(log(price) ~ latitude + longitude  + room_type + bedrooms + bathrooms + log(number_of_reviews) + `Air conditioning` + `Cable TV` + Doorman + Dryer + `Free parking on premises` + `Hot tub` + Internet + Pool, data = airbnb_train, method="qr")
 summary(third_model)
 plot(third_model)
 ```
